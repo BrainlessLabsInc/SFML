@@ -150,100 +150,6 @@ namespace
         return available;
     }
 
-
-    // Functors to call a glUniform*() variant
-    template <typename Arg0>
-    struct UniformSetter1
-    {
-        typedef void (GL_FUNCPTR *FuncPtr)(GLint, Arg0);
-
-        UniformSetter1(FuncPtr function, Arg0 v0) :
-        function(function),
-        v0(v0)
-        {
-        }
-
-        void operator() (GLint location) const
-        {
-            function(location, v0);
-        }
-
-        FuncPtr function;
-        Arg0    v0;
-    };
-
-    template <typename Arg0, typename Arg1>
-    struct UniformSetter2
-    {
-        typedef void (GL_FUNCPTR *FuncPtr)(GLint, Arg0, Arg1);
-
-        UniformSetter2(FuncPtr function, Arg0 v0, Arg1 v1) :
-        function(function),
-        v0(v0),
-        v1(v1)
-        {
-        }
-
-        void operator() (GLint location) const
-        {
-            function(location, v0, v1);
-        }
-
-        FuncPtr function;
-        Arg0    v0;
-        Arg1    v1;
-    };
-
-    template <typename Arg0, typename Arg1, typename Arg2>
-    struct UniformSetter3
-    {
-        typedef void (GL_FUNCPTR *FuncPtr)(GLint, Arg0, Arg1, Arg2);
-
-        UniformSetter3(FuncPtr function, Arg0 v0, Arg1 v1, Arg2 v2) :
-        function(function),
-        v0(v0),
-        v1(v1),
-        v2(v2)
-        {
-        }
-
-        void operator() (GLint location) const
-        {
-            function(location, v0, v1, v2);
-        }
-
-        FuncPtr function;
-        Arg0    v0;
-        Arg1    v1;
-        Arg2    v2;
-    };
-
-    template <typename Arg0, typename Arg1, typename Arg2, typename Arg3>
-    struct UniformSetter4
-    {
-        typedef void (GL_FUNCPTR *FuncPtr)(GLint, Arg0, Arg1, Arg2, Arg3);
-
-        UniformSetter4(FuncPtr function, Arg0 v0, Arg1 v1, Arg2 v2, Arg3 v3) :
-        function(function),
-        v0(v0),
-        v1(v1),
-        v2(v2),
-        v3(v3)
-        {
-        }
-
-        void operator() (GLint location) const
-        {
-            function(location, v0, v1, v2, v3);
-        }
-
-        FuncPtr function;
-        Arg0    v0;
-        Arg1    v1;
-        Arg2    v2;
-        Arg3    v3;
-    };
-
     // Transforms an array of 2D vectors into a contiguous array of scalars
     template <typename T>
     std::vector<T> createContiguousArray(const sf::Vector2<T>* vectorArray, std::size_t length)
@@ -301,6 +207,45 @@ namespace sf
 {
 ////////////////////////////////////////////////////////////
 Shader::CurrentTextureType Shader::CurrentTexture;
+
+
+////////////////////////////////////////////////////////////
+struct Shader::UniformBinder : private sf::NonCopyable
+{
+    ////////////////////////////////////////////////////////////
+    /// \brief Constructor: set up state before uniform is set
+    ///
+    ////////////////////////////////////////////////////////////
+    UniformBinder(Shader* shader, const std::string& name) :
+    program(0),
+    location(-1)
+    {
+        if (shader->m_shaderProgram)
+        {
+            ensureGlContext();
+
+            // Enable program
+            glCheck(program = GLEXT_glGetHandle(GLEXT_GL_PROGRAM_OBJECT));
+            glCheck(GLEXT_glUseProgramObject(castToGlHandle(shader->m_shaderProgram)));
+
+            // Store uniform location for further use outside constructor
+            location = shader->getUniformLocation(name);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////
+    /// \brief Destructor: restore state after uniform is set
+    ///
+    ////////////////////////////////////////////////////////////
+    ~UniformBinder()
+    {
+        // Disable program
+        glCheck(GLEXT_glUseProgramObject(program));
+    }
+
+    GLEXT_GLhandle program;  ///< OpenGL handle to the program object
+    GLint          location; ///< Uniform location
+};
 
 
 ////////////////////////////////////////////////////////////
@@ -432,64 +377,72 @@ bool Shader::loadFromStream(InputStream& vertexShaderStream, InputStream& fragme
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, float x)
 {
-    UniformSetter1<GLfloat> setter(GLEXT_glUniform1f, x);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+    if (binder.location != -1)
+        glCheck(GLEXT_glUniform1f(binder.location, x));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Vec2& v)
 {
-    UniformSetter2<GLfloat, GLfloat> setter(GLEXT_glUniform2f, v.x, v.y);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform2f(binder.location, v.x, v.y));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Vec3& v)
 {
-    UniformSetter3<GLfloat, GLfloat, GLfloat> setter(GLEXT_glUniform3f, v.x, v.y, v.z);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform3f(binder.location, v.x, v.y, v.z));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Vec4& v)
 {
-    UniformSetter4<GLfloat, GLfloat, GLfloat, GLfloat> setter(GLEXT_glUniform4f, v.x, v.y, v.z, v.w);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform4f(binder.location, v.x, v.y, v.z, v.w));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, int x)
 {
-    UniformSetter1<GLint> setter(GLEXT_glUniform1i, x);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform1i(binder.location, x));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Ivec2& v)
 {
-    UniformSetter2<GLint, GLint> setter(GLEXT_glUniform2i, v.x, v.y);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform2i(binder.location, v.x, v.y));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Ivec3& v)
 {
-    UniformSetter3<GLint, GLint, GLint> setter(GLEXT_glUniform3i, v.x, v.y, v.z);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform3i(binder.location, v.x, v.y, v.z));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Ivec4& v)
 {
-    UniformSetter4<GLint, GLint, GLint, GLint> setter(GLEXT_glUniform4i, v.x, v.y, v.z, v.w);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform4i(binder.location, v.x, v.y, v.z, v.w));
 }
 
 
@@ -524,16 +477,18 @@ void Shader::setUniform(const std::string& name, const Glsl::Bvec4& v)
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Mat3& matrix)
 {
-    UniformSetter3<GLsizei, GLboolean, const GLfloat*> setter(GLEXT_glUniformMatrix3fv, 1, GL_FALSE, matrix.array);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniformMatrix3fv(binder.location, 1, GL_FALSE, matrix.array));
 }
 
 
 ////////////////////////////////////////////////////////////
 void Shader::setUniform(const std::string& name, const Glsl::Mat4& matrix)
 {
-    UniformSetter3<GLsizei, GLboolean, const GLfloat*> setter(GLEXT_glUniformMatrix4fv, 1, GL_FALSE, matrix.array);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniformMatrix4fv(binder.location, 1, GL_FALSE, matrix.array));
 }
 
 
@@ -588,8 +543,9 @@ void Shader::setUniform(const std::string& name, CurrentTextureType)
 ////////////////////////////////////////////////////////////
 void Shader::setUniformArray(const std::string& name, const float* scalarArray, std::size_t length)
 {
-    UniformSetter2<GLsizei, const GLfloat*> setter(GLEXT_glUniform1fv, length, scalarArray);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform1fv(binder.location, length, scalarArray));
 }
 
 
@@ -597,8 +553,10 @@ void Shader::setUniformArray(const std::string& name, const float* scalarArray, 
 void Shader::setUniformArray(const std::string& name, const Glsl::Vec2* vectorArray, std::size_t length)
 {
     std::vector<float> contiguous = createContiguousArray(vectorArray, length);
-    UniformSetter2<GLsizei, const GLfloat*> setter(GLEXT_glUniform2fv, length, &contiguous[0]);
-    setUniformImpl(name, setter);
+
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform2fv(binder.location, length, &contiguous[0]));
 }
 
 
@@ -606,8 +564,10 @@ void Shader::setUniformArray(const std::string& name, const Glsl::Vec2* vectorAr
 void Shader::setUniformArray(const std::string& name, const Glsl::Vec3* vectorArray, std::size_t length)
 {
     std::vector<float> contiguous = createContiguousArray(vectorArray, length);
-    UniformSetter2<GLsizei, const GLfloat*> setter(GLEXT_glUniform3fv, length, &contiguous[0]);
-    setUniformImpl(name, setter);
+
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform3fv(binder.location, length, &contiguous[0]));
 }
 
 
@@ -615,8 +575,10 @@ void Shader::setUniformArray(const std::string& name, const Glsl::Vec3* vectorAr
 void Shader::setUniformArray(const std::string& name, const Glsl::Vec4* vectorArray, std::size_t length)
 {
     std::vector<float> contiguous = createContiguousArray(vectorArray, length);
-    UniformSetter2<GLsizei, const GLfloat*> setter(GLEXT_glUniform4fv, length, &contiguous[0]);
-    setUniformImpl(name, setter);
+
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniform4fv(binder.location, length, &contiguous[0]));
 }
 
 
@@ -627,10 +589,11 @@ void Shader::setUniformArray(const std::string& name, const Glsl::Mat3* matrixAr
 
     std::vector<float> contiguous(matrixSize * length);
     for (std::size_t i = 0; i < length; ++i)
-        std::copy(matrixArray[i].array, matrixArray[i].array + matrixSize, &contiguous[matrixSize * i]);
+        priv::copyMatrix(matrixArray[i].array, matrixSize, &contiguous[matrixSize * i]);
 
-    UniformSetter3<GLsizei, GLboolean, const GLfloat*> setter(GLEXT_glUniformMatrix3fv, length, GL_FALSE, &contiguous[0]);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniformMatrix3fv(binder.location, length, GL_FALSE, &contiguous[0]));
 }
 
 
@@ -641,10 +604,11 @@ void Shader::setUniformArray(const std::string& name, const Glsl::Mat4* matrixAr
 
     std::vector<float> contiguous(matrixSize * length);
     for (std::size_t i = 0; i < length; ++i)
-        std::copy(matrixArray[i].array, matrixArray[i].array + matrixSize, &contiguous[matrixSize * i]);
+        priv::copyMatrix(matrixArray[i].array, matrixSize, &contiguous[matrixSize * i]);
 
-    UniformSetter3<GLsizei, GLboolean, const GLfloat*> setter(GLEXT_glUniformMatrix4fv, length, GL_FALSE, &contiguous[0]);
-    setUniformImpl(name, setter);
+    UniformBinder binder(this, name);
+	if (binder.location != -1)
+		glCheck(GLEXT_glUniformMatrix4fv(binder.location, length, GL_FALSE, &contiguous[0]));
 }
 
 
@@ -919,30 +883,6 @@ int Shader::getUniformLocation(const std::string& name)
             err() << "Parameter \"" << name << "\" not found in shader" << std::endl;
 
         return location;
-    }
-}
-
-
-////////////////////////////////////////////////////////////
-template <typename F>
-void Shader::setUniformImpl(const std::string& name, const F& functor)
-{
-    if (m_shaderProgram)
-    {
-        ensureGlContext();
-
-        // Enable program
-        GLEXT_GLhandle program;
-        glCheck(program = GLEXT_glGetHandle(GLEXT_GL_PROGRAM_OBJECT));
-        glCheck(GLEXT_glUseProgramObject(castToGlHandle(m_shaderProgram)));
-
-        // Get uniform location and assign it new values
-        GLint location = getUniformLocation(name);
-        if (location != -1)
-            glCheck(functor(location));
-
-        // Disable program
-        glCheck(GLEXT_glUseProgramObject(program));
     }
 }
 

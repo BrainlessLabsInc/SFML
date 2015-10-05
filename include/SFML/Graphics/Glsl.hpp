@@ -38,28 +38,6 @@ namespace sf
 {
 namespace priv
 {
-    // Forward declarations
-    template <std::size_t Columns, std::size_t Rows>
-    struct Matrix;
-
-    template <typename T>
-    struct Vector4;
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Helper functions to copy sf::Transform to sf::Glsl::Mat3/4
-    ///
-    ////////////////////////////////////////////////////////////
-    void initializeMatrix(Matrix<3, 3>& matrix, const Transform& transform);
-    void initializeMatrix(Matrix<4, 4>& matrix, const Transform& transform);
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Copy array-based matrix with given number of elements
-    ///
-    /// Indirection to std::copy() to avoid inclusion of
-    /// <algorithm> and MSVC's annoying 4996 warning in header
-    ///
-    ////////////////////////////////////////////////////////////
-    void copyMatrix(const float* source, std::size_t elements, float* dest);
 
     ////////////////////////////////////////////////////////////
     /// \brief Matrix type, used to set uniforms in GLSL
@@ -76,10 +54,7 @@ namespace priv
         ///                are copied to the instance.
         ///
         ////////////////////////////////////////////////////////////
-        explicit Matrix(const float* pointer)
-        {
-            copyMatrix(pointer, Columns * Rows, array);
-        }
+        explicit Matrix(const float* pointer);
 
         ////////////////////////////////////////////////////////////
         /// \brief Construct implicitly from SFML transform
@@ -90,10 +65,7 @@ namespace priv
         /// \param transform Object containing a transform.
         ///
         ////////////////////////////////////////////////////////////
-        Matrix(const Transform& transform)
-        {
-            initializeMatrix(*this, transform);
-        }
+        Matrix(const Transform& transform);
 
         float array[Columns * Rows]; ///< Array holding matrix data
     };
@@ -109,13 +81,7 @@ namespace priv
         /// \brief Default constructor, creates a zero vector
         ///
         ////////////////////////////////////////////////////////////
-        BaseVector4() :
-        x(0),
-        y(0),
-        z(0),
-        w(0)
-        {
-        }
+        BaseVector4();
 
         ////////////////////////////////////////////////////////////
         /// \brief Construct from 4 vector components
@@ -123,13 +89,7 @@ namespace priv
         /// \param X,Y,Z,W Components of the 4D vector
         ///
         ////////////////////////////////////////////////////////////
-        BaseVector4(T X, T Y, T Z, T W) :
-        x(X),
-        y(Y),
-        z(Z),
-        w(W)
-        {
-        }
+        BaseVector4(T X, T Y, T Z, T W);
 
         ////////////////////////////////////////////////////////////
         /// \brief Conversion constructor
@@ -138,13 +98,7 @@ namespace priv
         ///
         ////////////////////////////////////////////////////////////
         template <typename U>
-        explicit BaseVector4(const BaseVector4<U>& other) :
-        x(static_cast<T>(other.x)),
-        y(static_cast<T>(other.y)),
-        z(static_cast<T>(other.z)),
-        w(static_cast<T>(other.w))
-        {
-        }
+        explicit BaseVector4(const BaseVector4<U>& other);
 
         T x; ///< 1st component (X) of the 4D vector
         T y; ///< 2nd component (Y) of the 4D vector
@@ -159,21 +113,12 @@ namespace priv
     template <typename T>
     struct Vector4 : BaseVector4<T>
     {
-        Vector4() :
-        BaseVector4<T>()
-        {
-        }
+        Vector4();
 
-        Vector4(T X, T Y, T Z, T W) :
-        BaseVector4<T>(X, Y, Z, W)
-        {
-        }
+        Vector4(T X, T Y, T Z, T W);
 
         template <typename U>
-        explicit Vector4(const Vector4<U>& other) :
-        BaseVector4<T>(other)
-        {
-        }
+        explicit Vector4(const Vector4<U>& other);
     };
 
     ////////////////////////////////////////////////////////////
@@ -185,21 +130,12 @@ namespace priv
     template <>
     struct Vector4<float> : BaseVector4<float>
     {
-        Vector4() :
-        BaseVector4<float>()
-        {
-        }
+        Vector4();
 
-        Vector4(float X, float Y, float Z, float W) :
-        BaseVector4<float>(X, Y, Z, W)
-        {
-        }
+        Vector4(float X, float Y, float Z, float W);
 
         template <typename U>
-        explicit Vector4(const Vector4<U>& other) :
-        BaseVector4<float>(other)
-        {
-        }
+        explicit Vector4(const Vector4<U>& other);
 
         ////////////////////////////////////////////////////////////
         /// \brief Construct float vector implicitly from color
@@ -207,14 +143,10 @@ namespace priv
         /// \param color Color instance, is normalized to [0, 1]
         ///
         ////////////////////////////////////////////////////////////
-        Vector4(const Color& color) :
-        BaseVector4<float>(color.r / 255.f,
-                           color.g / 255.f,
-                           color.b / 255.f,
-                           color.a / 255.f)
-        {
-        }
+        Vector4(const Color& color);
     };
+
+#include <SFML/Graphics/Glsl.inl>
 
 } // namespace priv
 

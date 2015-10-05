@@ -35,6 +35,7 @@ namespace sf
 namespace priv
 {
 
+    ////////////////////////////////////////////////////////////
     void initializeMatrix(Matrix<3, 3>& matrix, const Transform& transform)
     {
         const float* from = transform.getMatrix(); // 4x4
@@ -46,12 +47,16 @@ namespace priv
         to[6] = from[12]; to[7] = from[13]; to[8] = from[15];
     }
 
+
+    ////////////////////////////////////////////////////////////
     void initializeMatrix(Matrix<4, 4>& matrix, const Transform& transform)
     {
         // Adopt 4x4 matrix as-is
         copyMatrix(transform.getMatrix(), 4 * 4, matrix.array);
     }
 
+
+    ////////////////////////////////////////////////////////////
     void copyMatrix(const float* source, std::size_t elements, float* dest)
     {
         std::copy(source, source + elements, dest);

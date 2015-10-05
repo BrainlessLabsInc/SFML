@@ -633,14 +633,13 @@ private:
     int getUniformLocation(const std::string& name);
 
     ////////////////////////////////////////////////////////////
-    /// \brief Sets uniforms using a function object (code reuse)
+    /// \brief RAII object to save and restore the program
+    ///        binding while uniforms are being set
     ///
-    /// \param name Name of the uniform variable
-    /// \param functor Function object setting the uniform
+    /// Implementation is private in the .cpp file.
     ///
     ////////////////////////////////////////////////////////////
-    template <typename F>
-    void setUniformImpl(const std::string& name, const F& functor);
+    struct UniformBinder;
 
     ////////////////////////////////////////////////////////////
     // Types
