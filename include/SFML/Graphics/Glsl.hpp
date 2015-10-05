@@ -38,113 +38,12 @@ namespace sf
 {
 namespace priv
 {
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Matrix type, used to set uniforms in GLSL
-    ///
-    ////////////////////////////////////////////////////////////
+    // Forward declarations
     template <std::size_t Columns, std::size_t Rows>
-    struct Matrix
-    {
-        ////////////////////////////////////////////////////////////
-        /// \brief Construct from raw data
-        ///
-        /// \param pointer Points to the beginning of an array that
-        ///                has the size of the matrix. The elements
-        ///                are copied to the instance.
-        ///
-        ////////////////////////////////////////////////////////////
-        explicit Matrix(const float* pointer);
+    struct Matrix;
 
-        ////////////////////////////////////////////////////////////
-        /// \brief Construct implicitly from SFML transform
-        ///
-        /// This constructor is only supported for 3x3 and 4x4
-        /// matrices.
-        ///
-        /// \param transform Object containing a transform.
-        ///
-        ////////////////////////////////////////////////////////////
-        Matrix(const Transform& transform);
-
-        float array[Columns * Rows]; ///< Array holding matrix data
-    };
-
-    ////////////////////////////////////////////////////////////
-    /// \brief Base class for common code in Vector4 template specializations
-    ///
-    ////////////////////////////////////////////////////////////
     template <typename T>
-    struct BaseVector4
-    {
-        ////////////////////////////////////////////////////////////
-        /// \brief Default constructor, creates a zero vector
-        ///
-        ////////////////////////////////////////////////////////////
-        BaseVector4();
-
-        ////////////////////////////////////////////////////////////
-        /// \brief Construct from 4 vector components
-        ///
-        /// \param X,Y,Z,W Components of the 4D vector
-        ///
-        ////////////////////////////////////////////////////////////
-        BaseVector4(T X, T Y, T Z, T W);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief Conversion constructor
-        ///
-        /// \param other 4D vector of different type
-        ///
-        ////////////////////////////////////////////////////////////
-        template <typename U>
-        explicit BaseVector4(const BaseVector4<U>& other);
-
-        T x; ///< 1st component (X) of the 4D vector
-        T y; ///< 2nd component (Y) of the 4D vector
-        T z; ///< 3rd component (Z) of the 4D vector
-        T w; ///< 4th component (W) of the 4D vector
-    };
-
-    ////////////////////////////////////////////////////////////
-    /// \brief 4D vector type, used to set uniforms in GLSL
-    ///
-    ////////////////////////////////////////////////////////////
-    template <typename T>
-    struct Vector4 : BaseVector4<T>
-    {
-        Vector4();
-
-        Vector4(T X, T Y, T Z, T W);
-
-        template <typename U>
-        explicit Vector4(const Vector4<U>& other);
-    };
-
-    ////////////////////////////////////////////////////////////
-    /// \brief 4D vector type, used to set uniforms in GLSL
-    ///
-    /// Template specialization to support sf::Color conversion
-    ///
-    ////////////////////////////////////////////////////////////
-    template <>
-    struct Vector4<float> : BaseVector4<float>
-    {
-        Vector4();
-
-        Vector4(float X, float Y, float Z, float W);
-
-        template <typename U>
-        explicit Vector4(const Vector4<U>& other);
-
-        ////////////////////////////////////////////////////////////
-        /// \brief Construct float vector implicitly from color
-        ///
-        /// \param color Color instance, is normalized to [0, 1]
-        ///
-        ////////////////////////////////////////////////////////////
-        Vector4(const Color& color);
-    };
+    struct Vector4;
 
 #include <SFML/Graphics/Glsl.inl>
 
